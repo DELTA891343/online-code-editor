@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futuristic Code Editor</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/f0b042d84a.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
+    <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--background-color, #1e1e2e);
+            color: var(--text-color, #fff);
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .editor-pane,
+        .output-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .editor-container {
+            flex: 1;
+            background: var(--editor-background-color, #2e2e3e);
+            color: var(--editor-text-color, #fff);
+            margin-bottom: 20px;
+        }
+
+        iframe {
+            flex: 1;
+            background: #fff;
+            border: none;
+            outline: none;
+        }
+
+        .label {
+            display: flex;
+            align-items: center;
+            background: var(--label-background-color, #3e3e5e);
+            padding: 5px 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .label i {
+            margin-right: 10px;
+        }
+
+        .mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .toolbar button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: var(--button-background-color, #3e3e5e);
+            color: var(--button-text-color, #fff);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toolbar button:hover {
+            background: var(--button-hover-background-color, #575770);
+        }
+
+        .terminal-container {
+            flex: 1;
+            background: var(--terminal-background-color, #000);
+            color: var(--terminal-text-color, #fff);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mode-toggle">
+        <i class="fas fa-moon"></i>
+    </div>
+    <div class="container">
+        <div class="editor-pane">
+            <div class="toolbar">
+                <button id="new-file">New File</button>
+                <button id="open-file">Open File</button>
+                <button id="save-file">Save File</button>
+                <button id="new-folder">New Folder</button>
+                <button id="open-folder">Open Folder</button>
+                <button id="save-folder">Save Folder</button>
+                <button id="new-text-file">New Text File</button>
+                <button id="new-terminal">New Terminal</button>
+            </div>
+            <div class="label"><i class="fab fa-html5"></i> HTML</div>
+            <div id="html-editor" class="editor-container"></div>
+            <div class="label"><i class="fab fa-css3-alt"></i> CSS</div>
+            <div id="css-editor" class="editor-container"></div>
+            <div class="label"><i class="fab fa-js"></i> JavaScript</div>
+            <div id="js-editor" class="editor-container"></div>
+            <div class="label"><i class="fas fa-terminal"></i> Terminal</div>
+            <div id="terminal" class="terminal-container"></div>
+        </div>
+        <div class="output-pane">
+            <div class="label"><i class="fas fa-play"></i> Output</div>
+            <iframe id="output"></iframe>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.32.1/min/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.32.1/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            const htmlEditor = monaco.editor.create(document.getElementById('html-editor'), {
+                value: '',
+                language: 'html',
+                theme: 'vs-dark',
+                automaticLayout: true
+            });
+
+            const cssEditor = monaco.editor.create(document.getElementById('css-editor'), {
+                value: '',
+                language: 'css',
+                theme: 'vs-dark',
+                automaticLayout: true
+            });
+
+            const jsEditor = monaco.editor.create(document.getElementById('js-editor'), {
+                value: '',
+                language: 'javascript',
+                theme: 'vs-dark',
+                automaticLayout: true
+            });
+
+            function run() {
+                const htmlCode = htmlEditor.getValue();
+                const cssCode = cssEditor.getValue();
+                const jsCode = jsEditor.getValue();
+                const output = document.getElementById("output");
+
+                const source = `
+                    <html>
+                    <head>
+                    <style>${cssCode}</style>
+                    </head>
+                    <body>
+                    ${htmlCode}
+                    <script>${jsCode}<\/script>
+                    </body>
+                    </html>
+                `;
+
+                const blob = new Blob([source], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+
+                output.src = url;
+            }
+
+            htmlEditor.onDidChangeModelContent(run);
+            cssEditor.onDidChangeModelContent(run);
+            jsEditor.onDidChangeModelContent(run);
+
+            // Custom Snippets for HTML
+            monaco.languages.registerCompletionItemProvider('html', {
+                provideCompletionItems: () => {
+                    return {
+                        suggestions: [
+                            {
+                                label: 'html:5',
+                                kind: monaco.languages.CompletionItemKind.Snippet,
+                                insertText: '<!DOCTYPE html>\n<html>\n<head>\n\t<title>${1:Document}</title>\n</head>\n<body>\n\t${2}\n</body>\n</html>',
+                                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                                documentation: 'Basic HTML5 template'
+                            }
+                        ]
+                    };
+                }
+            });
+
+            // Custom Snippets for CSS
+            monaco.languages.registerCompletionItemProvider('css', {
+                provideCompletionItems: () => {
+                    return {
+                        suggestions: [
+                            {
+                                label: 'mcn:box',
+                                kind: monaco.languages.CompletionItemKind.Snippet,
+                                insertText: '.box {\n\twidth: ${1:100px};\n\theight: ${2:100px};\n\tbackground: ${3:red};\n}',
+                                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                                documentation: 'Basic box model'
+                            }
+                        ]
+                    };
+                }
+            });
+
+            // Custom Snippets for JavaScript
+            monaco.languages.registerCompletionItemProvider('javascript', {
+                provideCompletionItems: () => {
+                    return {
+                        suggestions: [
+                            {
+                                label: 'log',
+                                kind: monaco.languages.CompletionItemKind.Snippet,
+                                insertText: 'console.log(${1});',
+                                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                                documentation: 'Log output to console'
+                            }
+                        ]
+                    };
+                }
+            });
+
+            // Dark Mode - Light Mode Toggle
+            const modeToggle = document.querySelector('.mode-toggle');
+            let isDarkMode = true
+            modeToggle.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            document.body.style.setProperty('--background-color', isDarkMode ? '#1e1e2e' : '#fff');
+            document.body.style.setProperty('--text-color', isDarkMode ? '#fff' : '#000');
+            document.body.style.setProperty('--editor-background-color', isDarkMode ? '#2e2e3e' : '#fff');
+            document.body.style.setProperty('--editor-text-color', isDarkMode ? '#fff' : '#000');
+            document.body.style.setProperty('--label-background-color', isDarkMode ? '#3e3e5e' : '#ddd');
+            document.body.style.setProperty('--button-background-color', isDarkMode ? '#3e3e5e' : '#ddd');
+
+            gsap.to('.mode-toggle i', { rotation: 360, duration: 1 });
+            modeToggle.innerHTML = `<i class="fas ${isDarkMode ? 'fa-moon' : 'fa-sun'}"></i>`;
+        });
+
+        // Initial animation
+        gsap.from('.label', { opacity: 0, duration: 1, y: -20, stagger: 0.2 });
+
+        // New Terminal Implementation
+        document.getElementById('new-terminal').addEventListener('click', () => {
+            const terminalContainer = document.getElementById('terminal');
+            terminalContainer.innerHTML = ''; // Clear existing terminal content
+            const term = new Terminal();
+            term.open(terminalContainer);
+            term.write('Welcome to the terminal!\r\n');
+        });
+
+        // Open File
+        document.getElementById('open-file').addEventListener('click', async () => {
+            try {
+                const [fileHandle] = await window.showOpenFilePicker();
+                const file = await fileHandle.getFile();
+                const content = await file.text();
+                if (file.type.includes('html')) {
+                    htmlEditor.setValue(content);
+                } else if (file.type.includes('css')) {
+                    cssEditor.setValue(content);
+                } else if (file.type.includes('javascript')) {
+                    jsEditor.setValue(content);
+                }
+            } catch (err) {
+                console.error('Error opening file:', err);
+            }
+        });
+
+        // Save File
+        document.getElementById('save-file').addEventListener('click', async () => {
+            try {
+                const options = {
+                    types: [
+                        {
+                            description: 'HTML Files',
+                            accept: {
+                                'text/html': ['.html']
+                            }
+                        },
+                        {
+                            description: 'CSS Files',
+                            accept: {
+                                'text/css': ['.css']
+                            }
+                        },
+                        {
+                            description: 'JavaScript Files',
+                            accept: {
+                                'application/javascript': ['.js']
+                            }
+                        }
+                    ]
+                };
+                const fileHandle = await window.showSaveFilePicker(options);
+                const writable = await fileHandle.createWritable();
+                const content = `${htmlEditor.getValue()}\n${cssEditor.getValue()}\n${jsEditor.getValue()}`;
+                await writable.write(content);
+                await writable.close();
+            } catch (err) {
+                console.error('Error saving file:', err);
+            }
+        });
+
+        // Open Folder (Currently Not Supported in all browsers)
+        document.getElementById('open-folder').addEventListener('click', async () => {
+            try {
+                const directoryHandle = await window.showDirectoryPicker();
+                for await (const entry of directoryHandle.values()) {
+                    if (entry.kind === 'file') {
+                        const file = await entry.getFile();
+                        const content = await file.text();
+                        if (file.type.includes('html')) {
+                            htmlEditor.setValue(content);
+                        } else if (file.type.includes('css')) {
+                            cssEditor.setValue(content);
+                        } else if (file.type.includes('javascript')) {
+                            jsEditor.setValue(content);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error opening folder:', err);
+            }
+        });
+
+        // Save Folder (Currently Not Supported in all browsers)
+        document.getElementById('save-folder').addEventListener('click', async () => {
+            try {
+                const directoryHandle = await window.showDirectoryPicker();
+                const htmlFileHandle = await directoryHandle.getFileHandle('index.html', { create: true });
+                const cssFileHandle = await directoryHandle.getFileHandle('styles.css', { create: true });
+                const jsFileHandle = await directoryHandle.getFileHandle('script.js', { create: true });
+
+                const htmlWritable = await htmlFileHandle.createWritable();
+                const cssWritable = await cssFileHandle.createWritable();
+                const jsWritable = await jsFileHandle.createWritable();
+
+                await htmlWritable.write(htmlEditor.getValue());
+                await cssWritable.write(cssEditor.getValue());
+                await jsWritable.write(jsEditor.getValue());
+
+                await htmlWritable.close();
+                await cssWritable.close();
+                await jsWritable.close();
+            } catch (err) {
+                console.error('Error saving folder:', err);
+            }
+        });
+    });
+</script>
+</body>
+</html>
