@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbo C++ Emulator</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Link to CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+</head>
+<body>
+    <div class="menu-bar">
+        <div class="menu-item" id="open-file">Open File</div>
+        <div class="menu-item" id="save-file">Save File</div>
+        <div class="menu-item" id="run-code">Run</div>
+    </div>
+    <div class="editor">
+        <textarea id="code-area" placeholder="Write your code here..."></textarea>
+    </div>
+    <div class="output">
+        <div class="output-header">Output:</div>
+        <div id="output-content"></div>
+    </div>
+    <div class="status-bar">
+        <span>Status: Ready</span>
+    </div>
+    <input type="file" id="file-input" style="display: none;" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/clike/clike.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
